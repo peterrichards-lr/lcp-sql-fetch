@@ -47,9 +47,8 @@ pub enum AppCommands {
         #[arg(short = 'u', long)]
         user: Option<String>,
 
-        /// Database password. If missing, you will be prompted securely.
-
-        #[arg(short = 'P', long)]
+        /// Database password. If missing, the tool will check the LCP_DB_PASSWORD environment variable or prompt securely.
+        #[arg(short = 'P', long, env = "LCP_DB_PASSWORD")]
         password: Option<String>,
 
         /// Bypass the safety warning for destructive SQL statements (UPDATE, DELETE, etc.).

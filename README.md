@@ -79,12 +79,29 @@ You can find example SQL scripts in the `examples/` directory to demonstrate the
 - **User Security Audit:** `examples/user_security_audit.sql` - Performs a complex join across 4 tables to generate a consolidated report of users, their sites, and roles.
 - **Storage Audit:** `examples/storage_audit.sql` - Identifies the top 10 largest files in the document library across all sites.
 - **List Tables:** `examples/list_tables.sql` - Lists all tables in the `public` schema. Useful for debugging table names and case-sensitivity issues.
+- **List Columns:** `examples/list_columns.sql` - Lists all columns for a specific table.
+- **Describe Tables:** `examples/describe_tables.sql` - Detailed schema dump for key Liferay tables.
 
 Example usage:
 
 ```bash
 cargo run -- fetch -p acme -e prd -f examples/user_security_audit.sql -o audit_results.txt
 ```
+
+## Password Management
+
+You can provide the database password in three ways (in order of precedence):
+
+1.  **Command Line Argument:** Use `-P` or `--password`.
+    ```bash
+    lcp-sql-fetch fetch ... -P my_password
+    ```
+2.  **Environment Variable:** Set the `LCP_DB_PASSWORD` variable.
+    ```bash
+    export LCP_DB_PASSWORD=my_password
+    lcp-sql-fetch fetch ...
+    ```
+3.  **Interactive Prompt:** If neither of the above is provided, the tool will prompt you securely.
 
 ## Distribution (macOS, Linux, Windows)
 
