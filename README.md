@@ -1,138 +1,105 @@
-# lcp-sql-fetch
+# Liferay Cloud SQL Fetch Tool (`lcp-sql-fetch`)
 
-A tool that executes local SQL scripts on a Liferay Cloud database via lcp shell and downloads the results.
+[![Rust CI](https://github.com/peterrichards-lr/lcp-sql-fetch/actions/workflows/rust.yml/badge.svg)](https://github.com/peterrichards-lr/lcp-sql-fetch/actions/workflows/rust.yml)
+[![Latest Release](https://img.shields.io/github/v/tag/peterrichards-lr/lcp-sql-fetch?label=version)](https://github.com/peterrichards-lr/lcp-sql-fetch/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A high-performance, cross-platform Rust CLI utility to securely execute local SQL scripts on your Liferay Cloud (LCP) environments and download the results as a file. It automates finding instance IDs, uploading scripts, and executing commands inside the `lcp shell`.
 
 ## Features
 
-- **Automated Execution:** Uses `expect` to automate the `lcp shell` login and script execution.
-- **File Management:** Handles uploading local SQL scripts and downloading result files via `lcp files`.
-- **Liferay Cloud Aware:** Designed specifically for Liferay Cloud (LXC) database environments.
-- **Cross-Platform:** GitHub Actions pre-configured for Windows, Linux, and macOS (ARM/Intel).
+- **Safe:** Fails fast if you aren't authenticated with `lcp`. Includes built-in protection against destructive SQL (UPDATE, DELETE, DROP) unless the `--force` flag is used.
+- **Smart:** Automatically discovers running Liferay instances and intelligently detects if your project ID already contains an environment suffix.
+- **Secure:** Uses hidden prompts for your database password instead of keeping it in your shell history (unless passed via flag or environment variable).
+- **Automated:** Uses `expect` to "type" commands into the interactive `lcp shell` for 100% hands-free execution on macOS/Linux.
+- **Cross-Platform:** Native binaries for macOS (Intel/ARM), Linux, and Windows.
 
-## Project Structure
+## Installation
 
-```plaintext
-.
-├── .cargo/config.toml        # Cargo aliases (setup, lint)
-├── .gemini/prompts/          # Automated Gemini CLI workflows
-├── .github/workflows/        # Multi-OS CI/CD (Release, Rust)
-├── .githooks/pre-commit      # Shared cross-platform git hook
-├── src/
-│   ├── main.rs               # Command routing
-│   ├── core/
-│   │   ├── mod.rs            # Core traits
-│   │   └── env.rs            # Project discovery logic
-│   ├── utils/
-│   │   ├── mod.rs            # Utility re-exports
-│   │   ├── git.rs            # Git wrappers
-│   │   └── xml.rs            # Recursive XML logic
-│   └── cli.rs                # Command definitions
-├── formula.rb.example        # Homebrew template
-├── scoop.json.example        # Scoop template
-├── .gitignore                # Tracks Cargo.lock for reliable CI
-├── Cargo.toml                # Feature-based dependencies
-└── LICENSE (MIT)
-```
-
-## Prerequisites
-
-- **Rust:** `cargo`, `rustc`, `rustfmt`, `clippy`.
-- **Liferay Cloud CLI (lcp):** Must be installed and authenticated.
-- **expect:** Must be installed on the system for shell automation.
-- **Git Hooks:** To ensure consistent code style, activate the shared pre-commit hooks:
-  - Run: `git config core.hooksPath .githooks`.
-  - On macOS/Linux: `chmod +x .githooks/pre-commit`.
-  - This hook automatically runs `cargo fmt` and `cargo clippy` before each commit.
-
-## Installation (End-Users)
-
-Once a release is published and distribution channels are updated, users can install the tool using these commands:
-
-### Homebrew (macOS / Linux)
+### macOS / Linux (Homebrew)
 
 ```bash
 brew tap peterrichards-lr/homebrew-tap
 brew install lcp-sql-fetch
 ```
 
-### Scoop (Windows)
+_Note: For full automation, ensure `expect` is installed (default on most macOS/Linux systems)._
 
-```bash
-scoop bucket add lcp-sql-fetch-bucket https://github.com/peterrichards-lr/scoop-bucket
+### Windows (Scoop)
+
+```powershell
+scoop bucket add peterrichards-lr https://github.com/peterrichards-lr/scoop-bucket
 scoop install lcp-sql-fetch
 ```
 
-## Development
+### Windows Subsystem for Linux (WSL)
+
+The tool works perfectly in WSL! For the best experience (100% automation), ensure `expect` is installed in your WSL distribution:
 
 ```bash
-# Build locally
-cargo build
-
-# Run with arguments
-cargo run -- fetch -p [project-id] -f query.sql
+# Ubuntu/Debian example
+sudo apt update && sudo apt install expect -y
 ```
 
-## Examples
+### Manual Download
 
-You can find example SQL scripts in the `examples/` directory to demonstrate the tool's capabilities:
+Download the pre-compiled executable for your OS from the [GitHub Releases](https://github.com/peterrichards-lr/lcp-sql-fetch/releases) page.
 
-- **User Security Audit:** `examples/user_security_audit.sql` - Performs a complex join across 4 tables to generate a consolidated report of users, their sites, and roles.
-- **Storage Audit:** `examples/storage_audit.sql` - Identifies the top 10 largest files in the document library across all sites.
-- **List Tables:** `examples/list_tables.sql` - Lists all tables in the `public` schema. Useful for debugging table names and case-sensitivity issues.
-- **List Columns:** `examples/list_columns.sql` - Lists all columns for a specific table.
-- **Describe Tables:** `examples/describe_tables.sql` - Detailed schema dump for key Liferay tables.
+### From Source
 
-Example usage:
+If you have Rust installed, you can build from source:
 
 ```bash
-cargo run -- fetch -p acme -e prd -f examples/user_security_audit.sql -o audit_results.txt
+cargo install --path .
 ```
+
+## Usage
+
+The tool is smart enough to handle project IDs in multiple formats and will guide you through the process:
+
+```bash
+# Option 1: Split project and environment
+lcp-sql-fetch fetch -p my-project -e dev -f query.sql -o results.txt
+
+# Option 2: Full LCP project ID
+lcp-sql-fetch fetch -p my-project-dev -f query.sql
+
+# Option 3: Interactive (will prompt for environment if missing)
+lcp-sql-fetch fetch -p my-project -f query.sql
+```
+
+### Options:
+
+- `-p, --project <PROJECT>`: The project ID (e.g., `lfrprj`) or full ID (e.g., `lfrprj-dev`)
+- `-e, --environment <ENVIRONMENT>`: The environment (e.g., `dev`, `uat`, `prd`)
+- `-s, --service <SERVICE>`: The service name [default: `liferay`]
+- `-f, --file <FILE>`: Path to the local `.sql` script to execute
+- `-o, --output <OUTPUT>`: Local path for the result file [default: `output.txt`]
+- `-u, --user <USER>`: Database username (defaults to project ID for read-only access)
+- `-P, --password <PASSWORD>`: Database password (optional, prompted securely if missing)
+- `-d, --database-type <TYPE>`: Database type (`psql` or `mysql`) [default: `psql`]
+- `--force`: Bypass safety warning for destructive SQL statements
 
 ## Password Management
 
 You can provide the database password in three ways (in order of precedence):
 
-1.  **Command Line Argument:** Use `-P` or `--password`.
-    ```bash
-    lcp-sql-fetch fetch ... -P my_password
-    ```
-2.  **Environment Variable:** Set the `LCP_DB_PASSWORD` variable.
-    ```bash
-    export LCP_DB_PASSWORD=my_password
-    lcp-sql-fetch fetch ...
-    ```
-3.  **Interactive Prompt:** If neither of the above is provided, the tool will prompt you securely.
+1. **Command Line Argument:** Use `-P` or `--password`.
+2. **Environment Variable:** Set the `LCP_DB_PASSWORD` variable.
+3. **Interactive Prompt:** If neither of the above is provided, the tool will prompt you securely.
 
-## Distribution (macOS, Linux, Windows)
+## Examples
 
-To avoid "Unidentified Developer" warnings on macOS and ensure a secure, user-level installation on Windows, we recommend building from source via **Homebrew** or **Scoop**.
+Check the `examples/` directory for useful scripts:
 
-### Repository Visibility & Authentication
+- `user_security_audit.sql`: Complex join across 4 tables for user/site/role reporting.
+- `storage_audit.sql`: Identifies top 10 largest files in the document library.
+- `list_tables.sql`: Lists all tables in the `public` schema.
 
-By default, Homebrew assumes your **homebrew-tap** and the tool's source repository are **public**.
+## Disclaimer
 
-If you wish to keep your distribution repositories **private**:
+Executing SQL directly on a production database can be dangerous. While this tool includes basic safety checks, you are responsible for the queries you run. Use with caution.
 
-1. Users must have a **GitHub Personal Access Token (PAT)** with `repo` scope.
-2. Users should export this token in their environment:
-   ```bash
-   export HOMEBREW_GITHUB_API_TOKEN=your_token_here
-   ```
-3. Without a token, `brew tap` and `brew install` will fail for private repositories.
+## License
 
-### Automated Distribution via Gemini
-
-This template includes an automated prompt for Gemini CLI to handle updating your Homebrew tap and Scoop bucket repositories with new releases.
-
-When you create a new GitHub release, you can simply ask Gemini:
-
-```bash
-"Please execute the steps in .gemini/prompts/update-distribution-channels.md to update my distribution repositories"
-```
-
-Gemini will automatically:
-
-1. Extract metadata from `Cargo.toml`.
-2. Calculate the SHA256 hash of the release tarball.
-3. Generate and write the Homebrew formula (`formula.rb.example`) and Scoop manifest (`scoop.json.example`).
-4. Commit and push the updates to your local `homebrew-tap` and `scoop-bucket` repositories.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
