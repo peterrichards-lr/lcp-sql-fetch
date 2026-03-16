@@ -1,9 +1,9 @@
 [package]
-name = "lfr-tool-template"
-version = "0.3.0"
+name = "lcp-sql-fetch"
+version = "0.1.0"
 edition = "2021"
 authors = ["Peter Richards"]
-description = "A modular template for Liferay Rust CLI tools with Workspace, LXC, and Client Extension support."
+description = "A tool that executes local SQL scripts on a Liferay Cloud database via lcp shell and downloads the results."
 
 [dependencies]
 # CLI Argument parsing
@@ -18,19 +18,24 @@ anyhow = "1.0"
 # Configuration & Data
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+home = "0.5"
 
 # Utilities
 chrono = "0.4"    # Timestamps for logs/backups
+rpassword = "7.3"
+indicatif = "0.17"
+execute = "0.2"
+tempfile = "3.8"
 
 # Optional dependencies for features
-reqwest = { version = "0.11", features = ["blocking"], optional = true }
+reqwest = { version = "0.11", features = ["blocking", "json"], optional = true }
 scraper = { version = "0.18", optional = true }
 serde_yaml = { version = "0.9", optional = true }
 
 [features]
-default = []
+default = ["web"]
 web = ["reqwest", "scraper"]
 yaml = ["serde_yaml"]
 
 [dev-dependencies]
-tempfile = "3.8"
+# Test dependencies

@@ -1,19 +1,13 @@
-# Liferay Rust Tool Template
+# lcp-sql-fetch
 
-A modular template for building high-performance, cross-platform CLI tools for Liferay DXP, Liferay Cloud (LXC), and Client Extensions.
-
-## New in v0.3.0
-
-- **Automated Initialization:** New Gemini prompt (`setup-new-tool.md`) to initialize metadata, features, and CI/CD automatically.
-- **Native Git Hooks:** Shared, cross-platform pre-commit hooks (`.githooks/`) for automated formatting and Clippy lints.
-- **Quality Aliases:** Built-in Cargo aliases for project setup, linting, and formatting checks.
-- **Robust Distribution:** Enhanced automated distribution with pre-flight URL validation and repository discovery.
+A tool that executes local SQL scripts on a Liferay Cloud database via lcp shell and downloads the results.
 
 ## Features
 
+- **Automated Execution:** Uses `expect` to automate the `lcp shell` login and script execution.
+- **File Management:** Handles uploading local SQL scripts and downloading result files via `lcp files`.
+- **Liferay Cloud Aware:** Designed specifically for Liferay Cloud (LXC) database environments.
 - **Cross-Platform:** GitHub Actions pre-configured for Windows, Linux, and macOS (ARM/Intel).
-- **Liferay Aware:** Logic for path resolution and product version detection from `gradle.properties`.
-- **Modern CLI:** Built on `clap` for a professional command-line experience.
 
 ## Project Structure
 
@@ -43,23 +37,12 @@ A modular template for building high-performance, cross-platform CLI tools for L
 ## Prerequisites
 
 - **Rust:** `cargo`, `rustc`, `rustfmt`, `clippy`.
+- **Liferay Cloud CLI (lcp):** Must be installed and authenticated.
+- **expect:** Must be installed on the system for shell automation.
 - **Git Hooks:** To ensure consistent code style, activate the shared pre-commit hooks:
   - Run: `git config core.hooksPath .githooks`.
   - On macOS/Linux: `chmod +x .githooks/pre-commit`.
   - This hook automatically runs `cargo fmt` and `cargo clippy` before each commit.
-
-## Getting Started
-
-1. Click **"Use this template"** on GitHub to create your new repository.
-2. **Automated Initialization:** Once cloned, ask Gemini to set up your new tool:
-   ```bash
-   "Please execute .gemini/prompts/setup-new-tool.md to initialize my new project"
-   ```
-   Gemini will automatically gather your project metadata (name, description, features) and update all core configuration files (`Cargo.toml`, `.github/workflows/release.yml`, and this `README.md`) for you.
-3. **Manual Customization:**
-   - Customize subcommands in `src/cli.rs`.
-   - Update `LICENSE` if necessary.
-4. **First Release:** Push a tag (e.g., `v1.0.0`) to trigger an automated release across all major operating systems.
 
 ## Installation (End-Users)
 
@@ -68,15 +51,15 @@ Once a release is published and distribution channels are updated, users can ins
 ### Homebrew (macOS / Linux)
 
 ```bash
-brew tap [github-user]/homebrew-tap
-brew install [tool-name]
+brew tap peterrichards-lr/homebrew-tap
+brew install lcp-sql-fetch
 ```
 
 ### Scoop (Windows)
 
 ```bash
-scoop bucket add [tool-name]-bucket https://github.com/[github-user]/scoop-bucket
-scoop install [tool-name]
+scoop bucket add lcp-sql-fetch-bucket https://github.com/peterrichards-lr/scoop-bucket
+scoop install lcp-sql-fetch
 ```
 
 ## Development
@@ -86,7 +69,7 @@ scoop install [tool-name]
 cargo build
 
 # Run with arguments
-cargo run -- --help
+cargo run -- fetch -p [project-id] -f query.sql
 ```
 
 ## Distribution (macOS, Linux, Windows)
@@ -95,11 +78,12 @@ To avoid "Unidentified Developer" warnings on macOS and ensure a secure, user-le
 
 ### Repository Visibility & Authentication
 
-By default, Homebrew assumes your **homebrew-tap** and the tool's source repository are **public**. 
+By default, Homebrew assumes your **homebrew-tap** and the tool's source repository are **public**.
 
 If you wish to keep your distribution repositories **private**:
+
 1. Users must have a **GitHub Personal Access Token (PAT)** with `repo` scope.
-2. Users should export this token in their environment: 
+2. Users should export this token in their environment:
    ```bash
    export HOMEBREW_GITHUB_API_TOKEN=your_token_here
    ```
@@ -116,6 +100,7 @@ When you create a new GitHub release, you can simply ask Gemini:
 ```
 
 Gemini will automatically:
+
 1. Extract metadata from `Cargo.toml`.
 2. Calculate the SHA256 hash of the release tarball.
 3. Generate and write the Homebrew formula (`formula.rb.example`) and Scoop manifest (`scoop.json.example`).

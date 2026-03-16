@@ -1,3 +1,3 @@
 pub mod git;
+pub mod lcp_utils;
 pub mod xml;
-pub use xml::find_elements_by_name;

@@ -1,3 +1,4 @@
 mod env;
+mod lcp;
 
-pub use env::{LiferayProject, ProjectType, Workspace};
+pub use lcp::LcpClient;

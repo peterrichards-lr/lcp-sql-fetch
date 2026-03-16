@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -16,16 +16,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: REPLACE_ME
-            asset_name: REPLACE_ME-linux-x86_64.tar.gz
+            artifact_name: lcp-sql-fetch
+            asset_name: lcp-sql-fetch-linux-x86_64.tar.gz
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: REPLACE_ME
-            asset_name: REPLACE_ME-macos-arm64.tar.gz
+            artifact_name: lcp-sql-fetch
+            asset_name: lcp-sql-fetch-macos-arm64.tar.gz
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: REPLACE_ME.exe
-            asset_name: REPLACE_ME-windows-x86_64.zip
+            artifact_name: lcp-sql-fetch.exe
+            asset_name: lcp-sql-fetch-windows-x86_64.zip
 
     steps:
       - name: Checkout repository
