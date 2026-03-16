@@ -72,6 +72,20 @@ cargo build
 cargo run -- fetch -p [project-id] -f query.sql
 ```
 
+## Examples
+
+You can find example SQL scripts in the `examples/` directory to demonstrate the tool's capabilities:
+
+- **User Security Audit:** `examples/user_security_audit.sql` - Performs a complex join across 4 tables to generate a consolidated report of users, their sites, and roles.
+- **Storage Audit:** `examples/storage_audit.sql` - Identifies the top 10 largest files in the document library across all sites.
+- **List Tables:** `examples/list_tables.sql` - Lists all tables in the `public` schema. Useful for debugging table names and case-sensitivity issues.
+
+Example usage:
+
+```bash
+cargo run -- fetch -p acme -e prd -f examples/user_security_audit.sql -o audit_results.txt
+```
+
 ## Distribution (macOS, Linux, Windows)
 
 To avoid "Unidentified Developer" warnings on macOS and ensure a secure, user-level installation on Windows, we recommend building from source via **Homebrew** or **Scoop**.

@@ -1,13 +1,13 @@
 [package]
 name = "lcp-sql-fetch"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 authors = ["Peter Richards"]
 description = "A tool that executes local SQL scripts on a Liferay Cloud database via lcp shell and downloads the results."
 
 [dependencies]
 # CLI Argument parsing
-clap = { version = "4.4", features = ["derive"] }
+clap = { version = "4.4", features = ["derive", "env"] }
 
 # XML Processing (Crucial for Tomcat/Liferay configs)
 edit-xml = "0.1"
@@ -26,6 +26,8 @@ rpassword = "7.3"
 indicatif = "0.17"
 execute = "0.2"
 tempfile = "3.8"
+dialoguer = "0.11"
+walkdir = "2.4"
 
 # Optional dependencies for features
 reqwest = { version = "0.11", features = ["blocking", "json"], optional = true }

@@ -5,8 +5,9 @@ mod utils;
 use crate::cli::{App, AppCommands};
 use crate::core::LcpClient;
 use crate::utils::lcp_utils;
+use crate::utils::lcp_utils::SqlExecutionContext;
 use clap::Parser;
-use std::io::{self, Write};
+use std::fs;
 
 fn main() -> anyhow::Result<()> {
     let args = App::parse();
@@ -18,70 +19,110 @@ fn main() -> anyhow::Result<()> {
             service,
             file,
             output,
+            user,
             password,
+            force,
+            database_type,
         } => {
             // 0. Runtime Dependency Check
             lcp_utils::check_expect_available()?;
 
-            // 1. Project ID Resolution (Smart Detection)
-            let project_id = if project.contains('-') {
-                project.clone()
-            } else if let Some(env) = environment {
-                format!("{}-{}", project, env)
-            } else {
-                print!(
-                    "Project ID '{}' does not contain an environment suffix. Please enter environment (e.g., prd, uat): ",
+            // 1. Read Local SQL Content (Need this early for validation)
+            let sql_content = fs::read_to_string(&file)?;
+
+            // 2. Safety Validation
+            lcp_utils::check_destructive_sql(&sql_content, force)?;
+
+            // 3. Project ID Resolution (Smart Detection & Robust Prompting)
+            let project_id = if let Some(env) = environment {
+                if project.ends_with(&format!("-{}", env)) {
                     project
-                );
-                io::stdout().flush()?;
-                let mut env_input = String::new();
-                io::stdin().read_line(&mut env_input)?;
-                format!("{}-{}", project, env_input.trim())
+                } else {
+                    format!("{}-{}", project, env)
+                }
+            } else if project.contains('-') {
+                project
+            } else {
+                let env = lcp_utils::prompt_environment(&project)?;
+                format!("{}-{}", project, env)
             };
 
-            // 2. Auth & Project Validation
+            // 4. Username Resolution (Default to project_id for read-only user)
+            let db_user = match user {
+                Some(u) => u,
+                None => project_id.clone(),
+            };
+
+            // 5. Auth & Project Validation
             let lcp = LcpClient::new()?;
             lcp.validate_project(&project_id)?;
 
-            // 3. Password Secure Prompt
+            // 6. Password Secure Prompt (Include user in prompt)
             let pwd = match password {
                 Some(p) => p,
-                None => lcp_utils::prompt_password()?,
+                None => lcp_utils::prompt_password(&project_id, &db_user)?,
             };
 
-            // 4. Instance Discovery
+            // 7. Instance Discovery
             let instance_id = lcp_utils::get_running_instance(&project_id, &service)?;
 
-            // 5. Remote Path Generation (Unique to avoid collisions)
+            // 8. Remote Path Generation
             let ts = chrono::Utc::now().timestamp();
-            let remote_sql = format!("/tmp/query_{}.sql", ts);
-            let remote_output = format!("/tmp/output_{}.txt", ts);
+            let remote_output_filename = format!("lcp_sql_output_{}.txt", ts);
+            let remote_output_path = format!("/mnt/persistent-storage/{}", remote_output_filename);
 
-            // 6. File Upload
-            lcp_utils::upload_file(&project_id, &service, &file, &remote_sql)?;
+            // 9. Automated Execution (Expect with injection)
+            let sql_exec_res = lcp_utils::run_sql_via_expect(SqlExecutionContext {
+                project_id: &project_id,
+                service: &service,
+                instance_id: &instance_id,
+                password: &pwd,
+                sql_content: &sql_content,
+                output_filename: &remote_output_filename,
+                database_type: &database_type,
+                user: &db_user,
+                verbose: args.verbose,
+            });
 
-            // 7. Automated Execution (Expect)
-            lcp_utils::run_sql_via_expect(
+            // 10. File Download (Always attempt download, as it may contain stderr on failure)
+            let _ =
+                lcp_utils::download_file(&project_id, &service, &remote_output_filename, &output);
+
+            // 11. Cleanup
+            let cleanup_res = lcp_utils::cleanup_remote_files(
                 &project_id,
                 &service,
                 &instance_id,
-                &pwd,
-                &remote_sql,
-                &remote_output,
-            )?;
+                &["/tmp/query.sql", &remote_output_path],
+                args.verbose,
+            );
 
-            // 8. File Download
-            lcp_utils::download_file(&project_id, &service, &remote_output, &output)?;
+            // 12. Handle Execution Results
+            if let Err(e) = sql_exec_res {
+                println!("\n❌ SQL Execution Failed!");
+                println!("Error: {}", e);
 
-            // 9. Cleanup
-            lcp_utils::cleanup_remote_files(
-                &project_id,
-                &service,
-                &instance_id,
-                &[&remote_sql, &remote_output],
-            )?;
+                if fs::metadata(&output).map(|m| m.len() > 0).unwrap_or(false) {
+                    println!(
+                        "\nThe database returned an error. Check: {} for details.",
+                        output.display()
+                    );
+                } else {
+                    println!("\nNo output was generated. Please check your SQL query and database connectivity.");
+                }
 
-            println!("\n✨ Success! SQL results saved to: {}", output.display());
+                cleanup_res?;
+                anyhow::bail!("Fetch failed due to SQL error.");
+            }
+
+            cleanup_res?;
+
+            // 13. Result Verification (for successful execution with empty result set)
+            if fs::metadata(&output)?.len() == 0 {
+                println!("\n⚠️  Warning: The output file is empty. Your query may have returned no results.");
+            } else {
+                println!("\n✨ Success! SQL results saved to: {}", output.display());
+            }
         }
     }
 

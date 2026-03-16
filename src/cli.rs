@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Parser)]
 #[command(name = "lcp-sql-fetch")]
@@ -6,6 +6,17 @@ use clap::{Parser, Subcommand};
 pub struct App {
     #[command(subcommand)]
     pub command: AppCommands,
+
+    /// Show verbose output from internal processes (lcp shell, expect, etc.)
+    #[arg(short, long, global = true)]
+    pub verbose: bool,
+}
+
+#[derive(ValueEnum, Clone, Debug, Default)]
+pub enum DatabaseType {
+    #[default]
+    Psql,
+    Mysql,
 }
 
 #[derive(Subcommand)]
@@ -29,11 +40,24 @@ pub enum AppCommands {
         file: std::path::PathBuf,
 
         /// Local path for the result file.
-        #[arg(short, long, default_value = "output.txt")]
+        #[arg(short = 'o', long, default_value = "output.txt")]
         output: std::path::PathBuf,
 
+        /// Database username. Defaults to the project-environment ID (read-only user).
+        #[arg(short = 'u', long)]
+        user: Option<String>,
+
         /// Database password. If missing, you will be prompted securely.
+
         #[arg(short = 'P', long)]
         password: Option<String>,
+
+        /// Bypass the safety warning for destructive SQL statements (UPDATE, DELETE, etc.).
+        #[arg(long)]
+        force: bool,
+
+        /// Database type to use for execution.
+        #[arg(short = 'd', long, value_enum, default_value_t = DatabaseType::Psql)]
+        database_type: DatabaseType,
     },
 }
