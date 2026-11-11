@@ -139,7 +139,7 @@ lcp-sql-fetch fetch -p lfrprj -e uat -f examples/storage_audit.sql -o storage.tx
    git push origin vX.Y.Z
    ```
    The release workflow fails if the tag isn't annotated, doesn't match `Cargo.toml`, or has no `CHANGELOG.md` section.
-4. Update the distribution channels with `.gemini/prompts/update-distribution-channels.md`. The Scoop bucket picks up later releases automatically once a tool's manifest exists.
+4. Update the distribution channels. The Scoop bucket already has a manifest for this tool and picks up new releases automatically. The Homebrew tap has a formula, but its `update-formulas.yml` workflow does not include `lcp-sql-fetch` yet, so until it is added there, update the formula with `.gemini/prompts/update-distribution-channels.md`.
 
 ## Disclaimer
 

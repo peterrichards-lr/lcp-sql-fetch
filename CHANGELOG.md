@@ -26,6 +26,7 @@ _Nothing yet._
 - Replace `.github/workflows/release.yml` with the template version: names are derived from `Cargo.toml`, tags must be annotated and match the `Cargo.toml` version, release notes come from `CHANGELOG.md`, and Intel macOS binaries are built.
 - Pin GitHub Actions in `.github/workflows/rust.yml` to commit SHAs.
 - Update `.gemini/prompts/update-distribution-channels.md` from the template.
+- Remove the `cargo setup-hooks` alias, which could never work because Cargo aliases only run Cargo subcommands. Use `git config core.hooksPath .githooks`.
 - Restructure `README.md` and add a Releasing section.
 
 ### Fixed
