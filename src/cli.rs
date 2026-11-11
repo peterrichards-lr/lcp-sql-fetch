@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Parser)]
-#[command(name = "lcp-sql-fetch")]
+#[command(name = "lcp-sql-fetch", version)]
 #[command(about = "Execute local SQL scripts on Liferay Cloud and fetch results", long_about = None)]
 pub struct App {
     #[command(subcommand)]
