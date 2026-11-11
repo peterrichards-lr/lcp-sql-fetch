@@ -1,6 +1,6 @@
 [package]
 name = "lcp-sql-fetch"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2021"
 authors = ["Peter Richards"]
 description = "A tool that executes local SQL scripts on a Liferay Cloud database via lcp shell and downloads the results."
